@@ -268,7 +268,23 @@ bool MyBOClass::IsColliding(MyBOClass* const a_pOther)
 
     vector3 t = a_pOther->m_v3CenterG - this->m_v3CenterG;
 
-    //Ian add here
+    for (int i = 0; i < 15; ++i) {
+        vector3 n = planeNormals[i];
+        float dist = AbsDot(n, t);
+        float aDist = 0.0f;
+        float bDist = 0.0f;
+        for (int j = 0; j < 3; ++j) {
+            aDist += AbsDot(this->m_v3HalfWidth[j] * planeNormals[j], n);	//my width,height,depth dot products
+            bDist += AbsDot(a_pOther->m_v3HalfWidth[j] * planeNormals[j + 3], n);	//other width,height,depth,dot products			
+        }
+        if (dist > aDist + bDist) {
+            //std::cout << dist << ": " << aDist+bDist << " - " << i << std::endl;
+            float m = 0.5f * (dist + aDist - bDist);
+            DrawPlane(this->m_v3CenterG + glm::sign(glm::dot(planeNormals[i], t))*planeNormals[i] * m, planeNormals[i], PlaneColor(i));
+            return false;
+        }
+    }
+    return bColliding;
 }
 
 float MyBOClass::AbsDot(vector3 a, vector3 b) {
