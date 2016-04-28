@@ -170,6 +170,12 @@ private:
 	OUTPUT: ---
 	*/
 	void Init(void);
+
+    float AbsDot(vector3 a, vector3 b);
+    void DrawPlane(vector3 position, vector3 normal, vector3 color);
+    vector3 TransformVector(matrix4 m, vector3 v);
+    vector3 TransformLocalAxis(MyBOClass* box, vector3 axis);
+    vector3 PlaneColor(int index);
 };
 
 #endif //__MYBOCLASS_H__

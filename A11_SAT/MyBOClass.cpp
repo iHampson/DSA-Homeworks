@@ -235,20 +235,64 @@ bool MyBOClass::IsColliding(MyBOClass* const a_pOther)
     if (m_v3MinG.z > a_pOther->m_v3MaxG.z)
         bColliding = false;
 
-    float radMe, radOther;
-    vector3 trans = a_pOther->GetCenterGlobal() - m_v3CenterG;
+    //-------------------------------- Separation Axis Theorem -------------//
+    /*
+    | T • L | > | ( WA*Ax ) • L | + | ( HA*Ay ) • L | + |( DA*Az ) • L | + | ( WB*Bx ) • L | + |( HB*By ) • L | + |( DB*Bz ) • L |
+    T = Cb-Ca
+    L = normal axis
+    formula from: http://www.jkh.me/files/tutorials/Separating%20Axis%20Theorem%20for%20Oriented%20Bounding%20Boxes.pdf
+    */
 
-    for (int i = 0; i < 3; i++) {
-        radMe = m_v3HalfWidthG[i];
-        radOther = a_pOther->GetHalfWidthG()[0] + a_pOther->GetHalfWidthG()[1] + a_pOther->GetHalfWidthG()[2];
-        if (abs(trans[i]) > radMe + radOther) bColliding = false;
+    vector3 planeNormals[15];
+
+    //my three face normals
+    planeNormals[0] = TransformLocalAxis(this, REAXISX);
+    planeNormals[1] = TransformLocalAxis(this, REAXISY);
+    planeNormals[2] = TransformLocalAxis(this, REAXISZ);
+
+    //other's three face normals
+    planeNormals[3] = TransformLocalAxis(a_pOther, REAXISX);
+    planeNormals[4] = TransformLocalAxis(a_pOther, REAXISY);
+    planeNormals[5] = TransformLocalAxis(a_pOther, REAXISZ);
+
+    //cross product combinations of face normals
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 3; j < 6; ++j) {
+            int index = 3 * i + j + 3;
+            planeNormals[index] = glm::cross(planeNormals[i], planeNormals[j]);
+            if (planeNormals[index] != vector3(0.0f)) {
+                planeNormals[index] = glm::normalize(planeNormals[index]);
+            }
+        }
     }
 
-    for (int i = 0; i < 3; i++) {
-        radMe = m_v3HalfWidthG[0] + m_v3HalfWidthG[1] + m_v3HalfWidthG[2];
-        radOther = a_pOther->GetHalfWidthG()[0];
-        if (abs(trans[0] + trans[1] + trans[2]) > radMe + radOther) bColliding = false;
-    }
+    vector3 t = a_pOther->m_v3CenterG - this->m_v3CenterG;
 
-	return bColliding;
+    //Ian add here
+}
+
+float MyBOClass::AbsDot(vector3 a, vector3 b) {
+    return glm::abs(glm::dot(a, b));
+}
+
+void MyBOClass::DrawPlane(vector3 position, vector3 normal, vector3 color) {
+    MeshManagerSingleton::GetInstance()->AddPlaneToRenderList(
+        glm::translate(position)
+        * ((normal == REAXISZ || normal == vector3(0.0f)) ? IDENTITY_M4 : glm::rotate(glm::angle(REAXISZ, normal), glm::cross(REAXISZ, normal)))
+        * glm::scale(vector3(5.0f)),
+        color
+        );
+}
+
+vector3 MyBOClass::TransformVector(matrix4 m, vector3 v) {
+    return vector3(m * vector4(v, 1.f));
+}
+
+vector3 MyBOClass::TransformLocalAxis(MyBOClass* box, vector3 axis) {
+    return glm::normalize(TransformVector(box->m_m4ToWorld, axis + box->m_v3Center) - box->m_v3CenterG);
+}
+
+vector3 MyBOClass::PlaneColor(int index) {
+    float f = static_cast<float>(index);
+    return vector3(f / 14 * .75, f / 14 * .9, 1 - (f / 14 * .75));
 }
