@@ -198,42 +198,57 @@ void MyBOClass::DisplayReAlligned(vector3 a_v3Color)
 }
 bool MyBOClass::IsColliding(MyBOClass* const a_pOther)
 {
-	//Get all vectors in global space
-	vector3 v3Min = vector3(m_m4ToWorld * vector4(m_v3Min, 1.0f));
-	vector3 v3Max = vector3(m_m4ToWorld * vector4(m_v3Max, 1.0f));
+    //Get all vectors in global space
+    vector3 v3Min = vector3(m_m4ToWorld * vector4(m_v3Min, 1.0f));
+    vector3 v3Max = vector3(m_m4ToWorld * vector4(m_v3Max, 1.0f));
 
-	vector3 v3MinO = vector3(a_pOther->m_m4ToWorld * vector4(a_pOther->m_v3Min, 1.0f));
-	vector3 v3MaxO = vector3(a_pOther->m_m4ToWorld * vector4(a_pOther->m_v3Max, 1.0f));
+    vector3 v3MinO = vector3(a_pOther->m_m4ToWorld * vector4(a_pOther->m_v3Min, 1.0f));
+    vector3 v3MaxO = vector3(a_pOther->m_m4ToWorld * vector4(a_pOther->m_v3Max, 1.0f));
 
-	/*
-	Are they colliding?
-	For Objects we will assume they are colliding, unless at least one of the following conditions is not met
-	*/
-	//first check the bounding sphere, if that is not colliding we can guarantee that there are no collision
-	if ((m_fRadius + a_pOther->m_fRadius) < glm::distance(m_v3CenterG, a_pOther->m_v3CenterG))
-		return false;
+    /*
+    Are they colliding?
+    For Objects we will assume they are colliding, unless at least one of the following conditions is not met
+    */
+    //first check the bounding sphere, if that is not colliding we can guarantee that there are no collision
+    if ((m_fRadius + a_pOther->m_fRadius) < glm::distance(m_v3CenterG, a_pOther->m_v3CenterG))
+        return false;
 
-	//If the distance was smaller it might be colliding
+    //If the distance was smaller it might be colliding
 
-	bool bColliding = true;
+    bool bColliding = true;
 
-	//Check for X
-	if (m_v3MaxG.x < a_pOther->m_v3MinG.x)
-		bColliding = false;
-	if (m_v3MinG.x > a_pOther->m_v3MaxG.x)
-		bColliding = false;
+    //Check for X
+    if (m_v3MaxG.x < a_pOther->m_v3MinG.x)
+        bColliding = false;
+    if (m_v3MinG.x > a_pOther->m_v3MaxG.x)
+        bColliding = false;
 
-	//Check for Y
-	if (m_v3MaxG.y < a_pOther->m_v3MinG.y)
-		bColliding = false;
-	if (m_v3MinG.y > a_pOther->m_v3MaxG.y)
-		bColliding = false;
+    //Check for Y
+    if (m_v3MaxG.y < a_pOther->m_v3MinG.y)
+        bColliding = false;
+    if (m_v3MinG.y > a_pOther->m_v3MaxG.y)
+        bColliding = false;
 
-	//Check for Z
-	if (m_v3MaxG.z < a_pOther->m_v3MinG.z)
-		bColliding = false;
-	if (m_v3MinG.z > a_pOther->m_v3MaxG.z)
-		bColliding = false;
+    //Check for Z
+    if (m_v3MaxG.z < a_pOther->m_v3MinG.z)
+        bColliding = false;
+    if (m_v3MinG.z > a_pOther->m_v3MaxG.z)
+        bColliding = false;
+
+    float radMe, radOther;
+    vector3 trans = a_pOther->GetCenterGlobal() - m_v3CenterG;
+
+    for (int i = 0; i < 3; i++) {
+        radMe = m_v3HalfWidthG[i];
+        radOther = a_pOther->GetHalfWidthG()[0] + a_pOther->GetHalfWidthG()[1] + a_pOther->GetHalfWidthG()[2];
+        if (abs(trans[i]) > radMe + radOther) bColliding = false;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        radMe = m_v3HalfWidthG[0] + m_v3HalfWidthG[1] + m_v3HalfWidthG[2];
+        radOther = a_pOther->GetHalfWidthG()[0];
+        if (abs(trans[0] + trans[1] + trans[2]) > radMe + radOther) bColliding = false;
+    }
 
 	return bColliding;
 }
